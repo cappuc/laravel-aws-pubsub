@@ -105,4 +105,23 @@ class SnsEventDispatcherJob extends SqsJob implements JobContract
     {
         return $this->payload()['Type'] ?? null;
     }
+
+    public function getJobId()
+    {
+        return $this->payload()['MessageId'];
+    }
+
+    public function uuid()
+    {
+        return $this->getJobId();
+    }
+
+    public function getRawBody()
+    {
+        $body = json_decode($this->job['Body'], true);
+
+        return json_encode(array_merge($body, [
+            'uuid' => $body['MessageId'] ?? null,
+        ]));
+    }
 }

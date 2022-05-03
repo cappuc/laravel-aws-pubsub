@@ -3,8 +3,10 @@
 namespace PodPoint\AwsPubSub\Tests\Sub\Queue\Jobs;
 
 use Aws\Sqs\SqsClient;
+use Illuminate\Queue\Failed\DatabaseUuidFailedJobProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Mockery as m;
 use PodPoint\AwsPubSub\Sub\Queue\Jobs\SnsEventDispatcherJob;
 use PodPoint\AwsPubSub\Tests\Sub\Concerns\MocksNotificationMessages;
@@ -138,6 +140,21 @@ class SnsEventDispatcherJobTest extends TestCase
         $this->getJob()->fire();
 
         Event::assertNothingDispatched();
+    }
+
+    /** @test */
+    public function it_contains_uuid_in_payload()
+    {
+        $this->mockedJobData = $this->mockedRichNotificationMessage([
+            'TopicArn' => 'TopicArn:123456',
+            'Message' => json_encode(['foo' => 'bar']),
+            'MessageId' => $uuid = Str::uuid(),
+        ])['Messages'][0];
+
+        $job = $this->getJob();
+
+        $this->assertArrayHasKey('uuid', json_decode($job->getRawBody(), true));
+        $this->assertEquals($uuid, json_decode($job->getRawBody(), true)['uuid']);
     }
 
     protected function getJob()
